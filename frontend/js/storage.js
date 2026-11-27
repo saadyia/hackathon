@@ -1,28 +1,37 @@
-// Persistance locale des saisies quotidiennes (localStorage, uniquement sur l'appareil).
-// Format : { "YYYY-MM-DD": { period: true, flow: "medium", focus: 3, ... } }
-// À remplacer plus tard par des appels au backend (voir docs/api.md).
+// Persistance locale (localStorage, uniquement sur l'appareil).
+// - Saisies quotidiennes : { "YYYY-MM-DD": { period: true | 'first' | false, flow: "medium", focus: 3, ... } }
+// - Tâches de révision : [{ id, title, difficulty: 'high'|'medium'|'low', date, deadline, movedFrom? }]
+//   (date = jour planifié, deadline = examen / rendu, toutes deux en clé "YYYY-MM-DD")
+// - Analyses du modèle : { "YYYY-MM-DD": { cognitive_capacity_percent, recommendation, ... } }
+// Les appels réseau au backend sont isolés dans api.js.
 
 import { today, toKey, addDays } from './dates.js';
 
 const STORAGE_KEY = 'eclore.entries.v1';
+const TASKS_KEY = 'eclore.tasks.v1';
+const ANALYSES_KEY = 'eclore.analyses.v1';
 
-function load() {
+function read(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    return JSON.parse(localStorage.getItem(key)) || fallback;
   } catch {
-    return {};
+    return fallback;
   }
 }
 
-let entries = load();
-
-function persist() {
+function write(key, value) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Navigation privée / stockage plein : les données restent en mémoire pour la session.
   }
 }
+
+let entries = read(STORAGE_KEY, {});
+let tasks = read(TASKS_KEY, []);
+let analyses = read(ANALYSES_KEY, {});
+
+const persist = () => write(STORAGE_KEY, entries);
 
 export const getAll = () => entries;
 export const getEntry = (key) => entries[key];
@@ -40,10 +49,45 @@ export function deleteEntry(key) {
 
 export function clearAll() {
   entries = {};
+  tasks = [];
+  analyses = {};
   persist();
+  write(TASKS_KEY, tasks);
+  write(ANALYSES_KEY, analyses);
 }
 
-export const hasData = () => Object.keys(entries).length > 0;
+export const hasData = () => Object.keys(entries).length > 0 || tasks.length > 0;
+
+// ---------- Tâches de révision ----------
+
+const newId = () => `t-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+/** Tâches triées par date planifiée. */
+export const getTasks = () => [...tasks].sort((a, b) => a.date.localeCompare(b.date));
+
+export function addTask(task) {
+  tasks = [...tasks, { ...task, id: newId() }];
+  write(TASKS_KEY, tasks);
+}
+
+export function deleteTask(id) {
+  tasks = tasks.filter((t) => t.id !== id);
+  write(TASKS_KEY, tasks);
+}
+
+export function setTasks(list) {
+  tasks = list;
+  write(TASKS_KEY, tasks);
+}
+
+// ---------- Analyses du modèle (capacité cognitive) ----------
+
+export const getAnalysis = (key) => analyses[key];
+
+export function setAnalysis(key, result) {
+  analyses = { ...analyses, [key]: result };
+  write(ANALYSES_KEY, analyses);
+}
 
 // ---------- Données de démonstration (pour la présentation au jury) ----------
 
@@ -77,7 +121,7 @@ export function loadDemoData() {
     const onPeriod = pDay !== undefined;
     if (!onPeriod && rnd() < 0.25) continue; // quelques jours non remplis, comme en vrai
 
-    const entry = { period: onPeriod };
+    const entry = { period: pDay === 0 ? 'first' : onPeriod };
     if (onPeriod) {
       entry.flow = flows[pDay];
       entry.pains = pDay < 3 ? ['cramps', pick(['back', 'headache', 'bloating'])] : ['cramps'];
@@ -100,4 +144,17 @@ export function loadDemoData() {
   }
   entries = demo;
   persist();
+
+  // Quelques révisions, dont trois prévues aujourd'hui (pour tester le mode SOS).
+  const day = (n) => toKey(addDays(ref, n));
+  tasks = [
+    { title: 'Chapitre 5 — Thermodynamique', difficulty: 'high', date: day(0), deadline: day(5) },
+    { title: 'Rapport de TP de chimie', difficulty: 'medium', date: day(0), deadline: day(4) },
+    { title: "Fiches de vocabulaire d'anglais", difficulty: 'low', date: day(0), deadline: day(3) },
+    { title: 'Exercices de statistiques', difficulty: 'medium', date: day(1), deadline: day(6) },
+    { title: 'Relire le cours de droit', difficulty: 'low', date: day(2), deadline: day(2) },
+  ].map((t) => ({ ...t, id: newId() }));
+  write(TASKS_KEY, tasks);
+  analyses = {};
+  write(ANALYSES_KEY, analyses);
 }

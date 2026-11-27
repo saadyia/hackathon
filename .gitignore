@@ -21,3 +21,6 @@ venv/
 # Node (si ajouté plus tard)
 node_modules/
 dist/
+
+# Cache du géocodage (backend/scripts/build_psy_map.py)
+.cache/

@@ -1,8 +1,9 @@
-// Calendrier mensuel : jours de règles enregistrés, prédictions, fenêtre fertile, saisies.
+// Calendrier mensuel : jours de règles enregistrés, prédictions, fenêtre fertile, saisies, révisions.
 
 import { MONTHS, WEEKDAYS_SHORT, addDays, toKey, today } from './dates.js';
+import { isPeriodDay } from './questions.js';
 
-export function renderCalendar(el, { year, month, selectedKey, entries, predictions, onSelect, onMonthChange }) {
+export function renderCalendar(el, { year, month, selectedKey, entries, predictions, taskDays = new Set(), onSelect, onMonthChange }) {
   const first = new Date(year, month, 1);
   const offset = (first.getDay() + 6) % 7; // semaine commençant le lundi
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -25,7 +26,7 @@ export function renderCalendar(el, { year, month, selectedKey, entries, predicti
     if (key === todayKey) { classes.push('is-today'); labels.push("aujourd'hui"); }
     if (key === selectedKey) classes.push('is-selected');
 
-    if (entry?.period) {
+    if (isPeriodDay(entry)) {
       classes.push('is-period');
       labels.push('règles enregistrées');
     } else if (predictions.periodDays.has(key)) {
@@ -39,6 +40,7 @@ export function renderCalendar(el, { year, month, selectedKey, entries, predicti
       labels.push('fenêtre fertile estimée');
     }
     if (entry) { classes.push('has-entry'); labels.push('journée remplie'); }
+    if (taskDays.has(key)) { classes.push('has-task'); labels.push('révision prévue'); }
 
     cells.push(`
       <button type="button" class="${classes.join(' ')}" data-key="${key}"
@@ -62,6 +64,7 @@ export function renderCalendar(el, { year, month, selectedKey, entries, predicti
       <li><span class="swatch swatch-predicted"></span>Règles prévues</li>
       <li><span class="swatch swatch-fertile"></span>Fenêtre fertile</li>
       <li><span class="swatch swatch-entry"></span>Journée remplie</li>
+      <li><span class="swatch swatch-task"></span>Révision prévue</li>
     </ul>`;
 
   // Propriétés on* (et non addEventListener) : le conteneur est réutilisé à chaque rendu.
