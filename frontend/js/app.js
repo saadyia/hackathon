@@ -1,4 +1,4 @@
-// Point d'entrée : routage par hash et tableau de bord.
+﻿// Point d'entrée : routage par hash et tableau de bord.
 
 import { capitalize, formatLong, formatShort, fromKey, toKey, today } from './dates.js';
 import * as store from './storage.js';
@@ -48,6 +48,11 @@ function route() {
 }
 
 function renderPage(page) {
+  main.onclick = null;
+  if (typeof page.render === 'function') {
+    page.render(main);
+    return;
+  }
   main.innerHTML = `
     <section class="page">
       <p class="page-icon" aria-hidden="true">${page.icon}</p>
@@ -203,3 +208,4 @@ function renderCheckinPanel({ entries, predictions }) {
 
 window.addEventListener('hashchange', route);
 route();
+
