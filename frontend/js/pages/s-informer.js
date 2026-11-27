@@ -12,3 +12,4 @@ export default {
     'Tes droits en tant qu’étudiante (aménagements, absences justifiées)',
   ],
 };
+npm install

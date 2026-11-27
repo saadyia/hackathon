@@ -44,7 +44,13 @@ export function renderAidesHub(container) {
   function showMenu() {
 
     container.innerHTML = `
-      <section class="page" style="display:grid;gap:24px">
+      <section class="page" style="
+  display:grid;
+  gap:20px;
+  width:100%;
+  max-width:none;
+  margin:0 auto;
+">
 
         <p class="eyebrow">HERHEALTH · SE SOIGNER</p>
 
@@ -83,7 +89,7 @@ export function renderAidesHub(container) {
         <div style="
           display:grid;
           grid-template-columns:
-            repeat(auto-fit,minmax(min(100%,240px),1fr));
+            repeat(5,minmax(0,1fr));
           gap:20px;
         ">
 
@@ -92,7 +98,11 @@ export function renderAidesHub(container) {
                     class="card"
                     data-module="${module.id}"
                     style="
-                      text-align:left;
+                      text-align:center;
+padding:14px;
+justify-items:center;
+align-content:start;
+overflow-wrap:anywhere;
                       border:1px solid var(--line);
                       display:grid;
                       gap:12px;
@@ -103,11 +113,46 @@ export function renderAidesHub(container) {
                 ${module.icon}
               </span>
 
-              <h2>${module.title}</h2>
+             <h2 style="
+  font-size:17px;
+  line-height:1.3;
+  font-family:var(--font);
+  overflow-wrap:normal;
+  word-break:normal;
+">
+  ${module.title}
+</h2>
 
-              <p class="muted">
-                ${module.description}
-              </p>
+<div class="card" style="
+  background:var(--primary-soft);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:20px;
+  padding:24px;
+">
+
+  <div style="display:grid;gap:8px">
+
+    <p class="eyebrow">
+      MES AIDES FINANCIÈRES
+    </p>
+
+    <h2>Mon bilan personnalisé</h2>
+
+    <p>
+      Découvre les aides adaptées à ta situation.
+    </p>
+
+  </div>
+
+  <button class="btn btn-primary"
+          data-module="full">
+    Commencer mon bilan →
+  </button>
+
+</div>
 
               <strong style="color:var(--primary)">
                 Accéder à mon outil →
