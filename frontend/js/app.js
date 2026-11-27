@@ -54,6 +54,11 @@ function route() {
 }
 
 function renderPage(page) {
+  main.onclick = null;
+  if (typeof page.render === 'function') {
+    page.render(main);
+    return;
+  }
   main.innerHTML = `
     <section class="page">
       <h1>${page.title}</h1>
@@ -392,3 +397,4 @@ async function triggerSos() {
 
 window.addEventListener('hashchange', route);
 route();
+

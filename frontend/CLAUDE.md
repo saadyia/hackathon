@@ -24,6 +24,7 @@ data/psy/           # données de la carte, générées par backend/scripts/buil
                     #   index.json (résumé par département), communes.json (recherche), <dép>.json (adresses)
 js/pages/index.js   # registre des pages secondaires
 js/pages/<pilier>.js # une page par pilier (s-informer, se-soigner, se-comprendre)
+js/aides/           # page « Se soigner » : menu (hub.js), simulateur et outils d'aides (styles : section « Se soigner » du CSS)
 ```
 
 ## Conventions
