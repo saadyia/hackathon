@@ -1,3 +1,5 @@
+import { renderSpecific } from './specific.js';
+import { renderCoverage } from './coverage.js';
 import { personalizeAids } from './personalization.js';
 import { renderFollowups } from './followup.js';
 import { QUESTIONS_AIDES } from './questionnaire.js';
@@ -451,9 +453,10 @@ function renderResults(container, profile) {
       pas une décision administrative.
     </p>
   `;
-
+renderCoverage(results, profile);
   renderSolidarity(results, profile);
   renderReimbursement(results, profile);
+renderSpecific(results, profile);
 
   results.scrollIntoView({
     behavior: 'smooth',
