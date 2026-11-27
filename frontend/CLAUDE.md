@@ -27,7 +27,7 @@ js/pages/<pilier>.js # une page par pilier (s-informer, se-soigner, se-comprendr
 ```
 
 ## Conventions
-- **Ajouter une question** = ajouter un objet dans `js/questions.js` (types : `toggle`, `single`, `multi`, `scale`, `text` ; `layout: 'rating'` pour une échelle 1-5 ; `showIf` pour l'affichage conditionnel). Ne pas toucher à `checkin.js` pour ça.
+- **Ajouter une question** = ajouter un objet dans `js/questions.js` (types : `toggle`, `single`, `multi`, `scale`, `number`, `text` ; `layout: 'rating'` pour une échelle 1-5 ; `showIf` pour l'affichage conditionnel). Ne pas toucher à `checkin.js` pour ça.
 - Les **valeurs** stockées sont des codes anglais stables (`'heavy'`, `'cramps'`), les **libellés** en français : on peut changer un libellé sans casser les données (important pour le futur ML).
 - Dates : toujours passer par `toKey()` / `fromKey()` de `dates.js`, jamais `toISOString()` (décalage UTC).
 - Couleurs : uniquement via les variables CSS de `:root`.

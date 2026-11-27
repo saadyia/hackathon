@@ -1,5 +1,5 @@
 // Persistance locale (localStorage, uniquement sur l'appareil).
-// - Saisies quotidiennes : { "YYYY-MM-DD": { period: true, flow: "medium", focus: 3, ... } }
+// - Saisies quotidiennes : { "YYYY-MM-DD": { period: true | 'first' | false, flow: "medium", focus: 3, ... } }
 // - Tâches de révision : [{ id, title, difficulty: 'high'|'medium'|'low', date, deadline, movedFrom? }]
 //   (date = jour planifié, deadline = examen / rendu, toutes deux en clé "YYYY-MM-DD")
 // - Analyses du modèle : { "YYYY-MM-DD": { cognitive_capacity_percent, recommendation, ... } }
@@ -121,7 +121,7 @@ export function loadDemoData() {
     const onPeriod = pDay !== undefined;
     if (!onPeriod && rnd() < 0.25) continue; // quelques jours non remplis, comme en vrai
 
-    const entry = { period: onPeriod };
+    const entry = { period: pDay === 0 ? 'first' : onPeriod };
     if (onPeriod) {
       entry.flow = flows[pDay];
       entry.pains = pDay < 3 ? ['cramps', pick(['back', 'headache', 'bloating'])] : ['cramps'];

@@ -20,13 +20,20 @@ function renderQuestion(q) {
         <output class="scale-value" data-output="${q.id}">–</output>
       </div>
       <div class="scale-labels"><span>${q.minLabel}</span><span>${q.maxLabel}</span></div>`;
+  } else if (q.type === 'number') {
+    control = `
+      <div class="number-field">
+        <input type="number" id="in-${q.id}" data-number="${q.id}" min="${q.min}" max="${q.max}" step="${q.step || 1}"
+          inputmode="decimal" placeholder="${escapeHtml(q.placeholder || '')}" aria-labelledby="${labelId}">
+        ${q.unit ? `<span class="muted">${q.unit}</span>` : ''}
+      </div>`;
   } else if (q.type === 'text') {
-    control = `<textarea id="in-${q.id}" data-text="${q.id}" rows="3" placeholder="${escapeHtml(q.placeholder || '')}" aria-labelledby="${labelId}"></textarea>`;
+    control = `<textarea id="in-${q.id}" data-text="${q.id}" rows="${q.rows || 3}" placeholder="${escapeHtml(q.placeholder || '')}" aria-labelledby="${labelId}"></textarea>`;
   } else {
     const layout = q.layout === 'rating' ? 'rating' : 'chips';
     const buttons = optionsOf(q).map((opt, i) => `
       <button type="button" class="option" data-q="${q.id}" data-i="${i}" aria-pressed="false">
-        ${opt.emoji ? `<span class="option-emoji" aria-hidden="true">${opt.emoji}</span>` : ''}
+        ${layout === 'rating' ? `<span class="option-value" aria-hidden="true">${i + 1}</span>` : ''}
         <span class="option-label">${opt.label}</span>
       </button>`).join('');
     control = `<div class="${layout}" role="group" aria-labelledby="${labelId}">${buttons}</div>`;
@@ -54,7 +61,6 @@ export function renderCheckin(el, { dateKey, entry, dayInfo, onSave, onDelete })
         <h2>${title}</h2>
       </header>
       <div class="empty-state">
-        <p class="empty-emoji" aria-hidden="true">🗓️</p>
         <p>Cette journée n'est pas encore arrivée : tu pourras la remplir le jour venu.</p>
         ${dayInfo ? `<p class="pill">${dayInfo}</p>` : ''}
       </div>`;
@@ -73,7 +79,7 @@ export function renderCheckin(el, { dateKey, entry, dayInfo, onSave, onDelete })
     <form class="checkin-form" novalidate>
       ${SECTIONS.map((s) => `
         <fieldset class="section">
-          <legend><span aria-hidden="true">${s.icon}</span> ${s.title}</legend>
+          <legend>${s.title}</legend>
           ${s.questions.map(renderQuestion).join('')}
         </fieldset>`).join('')}
       <div class="form-actions">
@@ -92,11 +98,17 @@ export function renderCheckin(el, { dateKey, entry, dayInfo, onSave, onDelete })
       const shown = isVisible(q, draft);
       wrapper.hidden = !shown;
       if (!shown) continue;
-      visible++;
       const value = draft[q.id];
-      if (value !== undefined && value !== '' && !(Array.isArray(value) && value.length === 0)) answered++;
+      if (!q.optional) {
+        visible++;
+        if (value !== undefined && value !== '' && !(Array.isArray(value) && value.length === 0)) answered++;
+      }
 
-      if (q.type === 'scale') {
+      if (q.type === 'number') {
+        const input = wrapper.querySelector('input');
+        // On ne réécrit pas le champ pendant la saisie (ex : « 7, » en cours de frappe).
+        if (document.activeElement !== input) input.value = value ?? '';
+      } else if (q.type === 'scale') {
         const input = wrapper.querySelector('input');
         if (value !== undefined) input.value = value;
         wrapper.querySelector('output').textContent = value ?? '–';
@@ -146,6 +158,12 @@ export function renderCheckin(el, { dateKey, entry, dayInfo, onSave, onDelete })
 
   form.addEventListener('input', (e) => {
     if (e.target.dataset.scale) draft[e.target.dataset.scale] = Number(e.target.value);
+    if (e.target.dataset.number) {
+      const q = QUESTIONS[e.target.dataset.number];
+      const v = e.target.valueAsNumber;
+      if (Number.isNaN(v)) delete draft[q.id];
+      else draft[q.id] = Math.max(q.min, Math.min(q.max, v));
+    }
     if (e.target.dataset.text !== undefined) {
       const v = e.target.value;
       if (v.trim()) draft[e.target.dataset.text] = v;

@@ -1,6 +1,7 @@
 // Calendrier mensuel : jours de règles enregistrés, prédictions, fenêtre fertile, saisies, révisions.
 
 import { MONTHS, WEEKDAYS_SHORT, addDays, toKey, today } from './dates.js';
+import { isPeriodDay } from './questions.js';
 
 export function renderCalendar(el, { year, month, selectedKey, entries, predictions, taskDays = new Set(), onSelect, onMonthChange }) {
   const first = new Date(year, month, 1);
@@ -25,7 +26,7 @@ export function renderCalendar(el, { year, month, selectedKey, entries, predicti
     if (key === todayKey) { classes.push('is-today'); labels.push("aujourd'hui"); }
     if (key === selectedKey) classes.push('is-selected');
 
-    if (entry?.period) {
+    if (isPeriodDay(entry)) {
       classes.push('is-period');
       labels.push('règles enregistrées');
     } else if (predictions.periodDays.has(key)) {
