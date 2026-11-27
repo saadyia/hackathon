@@ -457,6 +457,21 @@ textarea:focus { border-color: var(--primary); outline: none; }
 .aides-results-stack { display: grid; gap: 16px; }
 .aides-section > [aria-live]:empty { display: none; }
 
+/* Menu « Se soigner » (js/aides/hub.js) */
+.aides-hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; }
+.aides-hero-text { display: grid; gap: 6px; max-width: 52ch; }
+.aides-tools { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); }
+.aides-tool {
+  display: grid; gap: 8px; align-content: start; text-align: left;
+  border: 1.5px solid var(--line); box-shadow: none; padding: 18px;
+  transition: border-color .12s, background .12s;
+}
+.aides-tool:hover { border-color: var(--primary); background: var(--primary-softer); }
+.aides-tool-title { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; line-height: 1.25; }
+.aides-tool-link { margin-top: 4px; font-weight: 700; font-size: .9rem; color: var(--primary); }
+.aides-back { justify-self: start; padding-left: 0; }
+main > .aides-back { margin-bottom: 8px; }
+
 /* ===== Toast ===== */
 .toast {
   position: fixed; left: 50%; bottom: 24px; z-index: 50;
