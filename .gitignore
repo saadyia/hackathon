@@ -1,0 +1,23 @@
+# Système
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.vscode/
+.idea/
+
+# Secrets et configuration locale
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Python (futur backend / ML)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (si ajouté plus tard)
+node_modules/
+dist/
