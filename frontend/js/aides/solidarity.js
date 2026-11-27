@@ -9,8 +9,7 @@ export function renderSolidarity(container, profile) {
 
   const section = document.createElement('section');
 
-  section.className = 'card';
-  section.style.marginTop = '24px';
+  section.className = 'card aides-section';
 
   section.innerHTML = `
     <p class="eyebrow">Ma couverture sociale</p>
@@ -22,7 +21,7 @@ export function renderSolidarity(container, profile) {
       gratuite ou à tarif réduit.
     </p>
 
-    <form style="display:grid; gap:18px; margin-top:20px">
+    <form class="aides-form">
 
       ${profile.age < 25 ? `
         <label>
@@ -77,30 +76,13 @@ export function renderSolidarity(container, profile) {
 
     </form>
 
-    <div class="solidarity-result"
-         aria-live="polite"
-         style="margin-top:20px">
-    </div>
+    <div class="solidarity-result" aria-live="polite"></div>
 
-    <p class="muted" style="margin-top:20px">
+    <p class="muted">
       Barèmes métropolitains au 1er avril 2026.
       Simulation indicative sur données fictives.
     </p>
   `;
-
-  section.querySelectorAll('input, select').forEach(el => {
-    el.style.cssText = `
-      display:block;
-      width:100%;
-      padding:12px;
-      margin-top:8px;
-      border:1px solid var(--line);
-      border-radius:var(--radius-sm);
-      background:var(--surface);
-      color:var(--ink);
-      font:inherit;
-    `;
-  });
 
   container.appendChild(section);
 
@@ -180,19 +162,11 @@ export function renderSolidarity(container, profile) {
     }
 
     result.innerHTML = `
-      <div style="
-        background:var(--fertile-soft);
-        padding:20px;
-        border-radius:var(--radius);
-        display:grid;
-        gap:12px;
-      ">
+      <div class="aides-highlight">
 
-        <h2>${title}</h2>
+        <h3>${title}</h3>
 
-        <strong style="font-size:32px;color:var(--fertile)">
-          ${amount}
-        </strong>
+        <p class="aides-figure">${amount}</p>
 
         <p>${description}</p>
 
