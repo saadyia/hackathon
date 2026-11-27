@@ -48,6 +48,12 @@ function route() {
 }
 
 function renderPage(page) {
+  main.onclick = null;
+
+  if (typeof page.render === 'function') {
+    page.render(main);
+    return;
+  }
   main.innerHTML = `
     <section class="page">
       <p class="page-icon" aria-hidden="true">${page.icon}</p>
