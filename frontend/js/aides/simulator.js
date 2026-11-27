@@ -1,3 +1,4 @@
+import { applyAidesTheme } from './theme.js';
 import { renderSpecific } from './specific.js';
 import { renderCoverage } from './coverage.js';
 import { personalizeAids } from './personalization.js';
@@ -8,7 +9,7 @@ import { renderSolidarity } from './solidarity.js';
 import { renderReimbursement } from './reimbursement.js';
 
 export function renderSimulator(container) {
-
+applyAidesTheme(container);
   const steps = [
     {
       title: 'Faisons connaissance',
