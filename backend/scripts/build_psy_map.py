@@ -1,14 +1,18 @@
-"""Construit les données de la carte des psychologues (France entière).
+"""Construit les données de la carte des professionnel·les de santé (France entière).
+
+Professions disponibles (option --profession) :
+  psy : psychologues ;
+  gyn : gynécologues (médecins dont le savoir-faire est une spécialité de gynécologie).
 
 Étapes :
   1. lit l'extraction officielle « PS_LibreAcces » de l'Annuaire Santé (RPPS, Licence Ouverte) ;
-  2. garde les psychologues ayant une adresse d'exercice ;
+  2. garde les professionnel·les ayant une adresse d'exercice et un numéro de téléphone (joignables) ;
   3. géocode les adresses avec la Base Adresse Nationale (Géoplateforme, service public gratuit) :
      seules les adresses sont envoyées, jamais les noms ;
-  4. écrit frontend/data/psy/index.json, communes.json et un fichier par département.
+  4. écrit frontend/data/<profession>/index.json, communes.json et un fichier par département.
 
 Usage (depuis la racine du projet, Python 3.9+, aucune dépendance) :
-  python3 backend/scripts/build_psy_map.py chemin/vers/PS_LibreAcces_xxx.zip [--cache dossier]
+  python3 backend/scripts/build_psy_map.py chemin/vers/PS_LibreAcces_xxx.zip [--profession psy|gyn] [--cache dossier]
 
 Le zip se télécharge sur data.gouv.fr : « Annuaire Santé - Extractions des données en libre accès
 des professionnels intervenant dans le système de Santé (RPPS) - Format Zip ».
@@ -33,7 +37,14 @@ from pathlib import Path
 GEOCODER = "https://data.geopf.fr/geocodage"
 CHUNK = 5000
 ROOT = Path(__file__).resolve().parents[2]
-OUT_DIR = ROOT / "frontend" / "data" / "psy"
+DATA_DIR = ROOT / "frontend" / "data"
+
+# Sélection des lignes de l'extraction pour chaque profession.
+PROFESSIONS = {
+    "psy": lambda g: g("Libellé profession") == "Psychologue",
+    # Gynécologie médicale, gynécologie-obstétrique et leurs variantes (l'obstétrique seule est exclue).
+    "gyn": lambda g: g("Libellé profession") == "Médecin" and g("Libellé savoir-faire").startswith("Gyn"),
+}
 STUDENT = re.compile(r"^(BAPU|UNIVERSITE|SERVICE (DE )?SANTE (UNIVERSITAIRE|ETUDIANT)|SUMPPS|SSU|SSE)\b")
 
 
@@ -43,7 +54,7 @@ def log(*a):
 
 # ---------- 1. Lecture de l'extraction ----------
 
-def read_rows(zip_path):
+def read_rows(zip_path, keep):
     with zipfile.ZipFile(zip_path) as z:
         name = next(n for n in z.namelist() if "Personne_activite" in n)
         with z.open(name) as f:
@@ -53,11 +64,13 @@ def read_rows(zip_path):
             for line in src:
                 r = line.rstrip("\n").split("|")
                 g = lambda h: r[ix[h]].strip() if ix[h] < len(r) else ""
-                if g("Libellé profession") != "Psychologue":
+                if not keep(g):
                     continue
                 city_code = g("Code commune (coord. structure)")
                 if not city_code and not g("Code postal (coord. structure)"):
                     continue  # pas d'adresse d'exercice : impossible à cartographier
+                if not g("Téléphone (coord. structure)"):
+                    continue  # pas de téléphone : impossible de prendre rendez-vous
                 street = " ".join(x for x in [g("Numéro Voie (coord. structure)"), g("Indice répétition voie (coord. structure)"),
                                               g("Libellé type de voie (coord. structure)"), g("Libellé Voie (coord. structure)")] if x)
                 yield {
@@ -116,7 +129,7 @@ def geocode(keys, cache_dir, kind):
         chunk = keys[i:i + CHUNK]
         cache = cache_dir / f"{kind}-{i // CHUNK:04d}.json"
         if cache.exists():
-            data = json.loads(cache.read_text())
+            data = json.loads(cache.read_text(encoding="utf-8"))
         else:
             log(f"  {kind} : lot {i // CHUNK + 1}/{(len(keys) - 1) // CHUNK + 1} ({len(chunk)} lignes)")
             if kind == "address":
@@ -128,7 +141,7 @@ def geocode(keys, cache_dir, kind):
                                [("columns", "city"), ("citycode", "citycode"), ("type", "kind")])
             data = [[r.get("latitude"), r.get("longitude"), r.get("result_score"), r.get("result_type"),
                      r.get("result_context")] for r in res]
-            cache.write_text(json.dumps(data))
+            cache.write_text(json.dumps(data), encoding="utf-8")
         for k, d in zip(chunk, data):
             out[k] = d
     return out
@@ -162,13 +175,16 @@ def extraction_date(zip_path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("zip")
-    ap.add_argument("--cache", default=str(ROOT / ".cache" / "geocode"))
+    ap.add_argument("--profession", choices=sorted(PROFESSIONS), default="psy")
+    ap.add_argument("--cache", help="dossier du cache de géocodage (par défaut .cache/geocode/<profession>)")
     args = ap.parse_args()
-    cache_dir = Path(args.cache)
+    # Un cache par profession : les lots sont numérotés, ils ne doivent pas se mélanger.
+    cache_dir = Path(args.cache) if args.cache else ROOT / ".cache" / "geocode" / args.profession
+    out_dir = DATA_DIR / args.profession
 
     log("1/4 Lecture de l'extraction…")
-    rows = list(read_rows(args.zip))
-    log(f"  {len(rows)} lignes de psychologues avec adresse")
+    rows = list(read_rows(args.zip, PROFESSIONS[args.profession]))
+    log(f"  {len(rows)} lignes ({args.profession}) avec adresse et téléphone")
 
     log("2/4 Géocodage des adresses…")
     addr_keys = sorted({(r["street"], r["city"], r["citycode"]) for r in rows if r["street"]})
@@ -232,8 +248,8 @@ def main():
             place["people"].append(person)
 
     log("4/4 Écriture des fichiers…")
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    for old in OUT_DIR.glob("*.json"):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for old in out_dir.glob("*.json"):
         old.unlink()
     by_dep = defaultdict(list)
     for (dep, *_), p in places.items():
@@ -243,7 +259,7 @@ def main():
     communes = defaultdict(lambda: [0, 0.0, 0.0])
     for dep, plist in sorted(by_dep.items()):
         plist.sort(key=lambda p: (p["city"], p.get("addr", "")))
-        (OUT_DIR / f"{dep}.json").write_text(json.dumps({"places": plist}, ensure_ascii=False, separators=(",", ":")))
+        (out_dir / f"{dep}.json").write_text(json.dumps({"places": plist}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         people = [x for p in plist for x in p["people"]]
         counts = Counter(x["mode"] for x in people)
         lats = [p["lat"] for p in plist]
@@ -271,10 +287,10 @@ def main():
         "total": total,
         "deps": index,
     }
-    (OUT_DIR / "index.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")))
-    (OUT_DIR / "communes.json").write_text(json.dumps(
+    (out_dir / "index.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (out_dir / "communes.json").write_text(json.dumps(
         sorted([[city, dep, round(lat, 4), round(lng, 4), n] for (city, dep), (n, lat, lng) in communes.items()]),
-        ensure_ascii=False, separators=(",", ":")))
+        ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     log(f"Terminé : {total} fiches, {len(places)} lieux, {len(index)} départements, "
         f"{approx_count} fiches placées au centre de leur commune, {outliers} points aberrants corrigés ou écartés.")
 

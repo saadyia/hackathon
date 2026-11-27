@@ -1,5 +1,6 @@
-// Carte interactive des psychologues en France (Leaflet + OpenStreetMap).
-// Données : data/psy/ (Annuaire Santé RPPS géocodé, voir backend/scripts/build_psy_map.py)
+// Carte interactive des professionnel·les de santé en France (Leaflet + OpenStreetMap).
+// Données : data/<profession>/ (Annuaire Santé RPPS géocodé, voir backend/scripts/build_psy_map.py)
+// Seuls les professionnel·les ayant un numéro de téléphone sont conservé·es (joignables).
 //   index.json    : un résumé par département (effectifs, centre, emprise)
 //   communes.json : [nom, département, lat, lng, effectif] pour la recherche par ville
 //   <dép>.json    : les lieux d'exercice du département, chargés seulement quand on zoome dessus
@@ -8,14 +9,18 @@
 const LEAFLET_VERSION = '1.9.4';
 const LEAFLET_JS = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet-src.esm.js`;
 const LEAFLET_CSS = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css`;
-const DATA_DIR = 'data/psy';
+// Professions proposées : un dossier de données par profession.
+const PROFESSIONS = {
+  psy: { label: 'Psychologues', noun: 'psychologue', dir: 'data/psy' },
+  gyn: { label: 'Gynécologues', noun: 'gynécologue', dir: 'data/gyn' },
+};
 const FRANCE = [46.6, 2.4];
 const FRANCE_ZOOM = window.matchMedia('(max-width: 719px)').matches ? 5 : 6;
 const DETAIL_ZOOM = 8; // à partir de ce zoom, on affiche les adresses au lieu des départements
 
 const FILTERS = {
   all: { label: 'Tous', key: 'n', test: () => true },
-  student: { label: '🎓 Pour les étudiantes', key: 'student', test: (p) => isStudentService(p) },
+  student: { label: 'Pour les étudiantes', key: 'student', test: (p) => isStudentService(p) },
   L: { label: 'Libéral (cabinet)', key: 'L', test: (p) => p.mode === 'L' },
   S: { label: 'Salarié (hôpital, CMP…)', key: 'S', test: (p) => p.mode === 'S' },
 };
@@ -31,9 +36,7 @@ const plural = (n, word) => `${n.toLocaleString('fr-FR')} ${word}${n > 1 ? 's' :
 // ---------- Chargements (mis en cache pour toute la session) ----------
 
 let leafletPromise;
-let indexPromise;
-let communesPromise;
-const depPromises = new Map();
+const jsonCache = new Map(); // URL → promesse
 
 function loadLeaflet() {
   if (!leafletPromise) {
@@ -56,17 +59,18 @@ const getJson = (url) => fetch(url).then((r) => {
   return r.json();
 });
 
-const loadIndex = () => (indexPromise ??= getJson(`${DATA_DIR}/index.json`));
-const loadCommunes = () => (communesPromise ??= getJson(`${DATA_DIR}/communes.json`));
-function loadDep(code) {
-  if (!depPromises.has(code)) {
-    depPromises.set(code, getJson(`${DATA_DIR}/${code}.json`).catch((e) => {
-      depPromises.delete(code); // permettra de réessayer
+function loadCached(url) {
+  if (!jsonCache.has(url)) {
+    jsonCache.set(url, getJson(url).catch((e) => {
+      jsonCache.delete(url); // permettra de réessayer
       throw e;
     }));
   }
-  return depPromises.get(code);
+  return jsonCache.get(url);
 }
+const loadIndex = (prof) => loadCached(`${PROFESSIONS[prof].dir}/index.json`);
+const loadCommunes = (prof) => loadCached(`${PROFESSIONS[prof].dir}/communes.json`);
+const loadDep = (prof, code) => loadCached(`${PROFESSIONS[prof].dir}/${code}.json`);
 
 function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -81,10 +85,10 @@ function popupHtml(place, people) {
       <strong>${escapeHtml(p.name)}</strong>
       <span class="map-badge map-badge-${p.mode}">${p.mode === 'L' ? 'Libéral' : 'Salarié'}</span>
       ${p.site ? `<br><span class="map-site">${escapeHtml(p.site)}</span>` : ''}
-      ${p.tel ? `<br><a href="tel:${escapeHtml(p.tel)}">📞 ${escapeHtml(formatTel(p.tel))}</a>` : ''}
-      ${p.email ? `<br><a href="mailto:${escapeHtml(p.email)}">✉️ ${escapeHtml(p.email)}</a>` : ''}
+      ${p.tel ? `<br><a href="tel:${escapeHtml(p.tel)}">Tél. ${escapeHtml(formatTel(p.tel))}</a>` : ''}
+      ${p.email ? `<br><a href="mailto:${escapeHtml(p.email)}">${escapeHtml(p.email)}</a>` : ''}
     </li>`).join('');
-  return `<div class="map-popup"><p class="map-where">📍 ${where}</p><ul>${list}</ul></div>`;
+  return `<div class="map-popup"><p class="map-where">${where}</p><ul>${list}</ul></div>`;
 }
 
 // ---------- Rendu ----------
@@ -98,11 +102,14 @@ export async function renderPsyMap(el) {
     <div class="map-head">
       <div>
         <p class="eyebrow">Se soigner près de chez toi</p>
-        <h2>Trouver un·e psychologue</h2>
+        <h2>Trouver un·e professionnel·le de santé</h2>
       </div>
       <p class="map-count muted" aria-live="polite">Chargement…</p>
     </div>
     <div class="map-tools">
+      <div class="chips" role="group" aria-label="Choisir une profession">
+        ${Object.entries(PROFESSIONS).map(([k, p]) => `<button type="button" class="option" data-prof="${k}" aria-pressed="${k === 'psy'}">${p.label}</button>`).join('')}
+      </div>
       <div class="chips" role="group" aria-label="Filtrer par type d'exercice">
         ${Object.entries(FILTERS).map(([k, f]) => `<button type="button" class="option" data-filter="${k}" aria-pressed="${k === 'all'}">${f.label}</button>`).join('')}
       </div>
@@ -111,16 +118,16 @@ export async function renderPsyMap(el) {
           placeholder="Ville (ex : Rennes, Lyon…) ou nom" aria-label="Rechercher une ville ou un nom">
         <datalist id="map-cities"></datalist>
         <select class="map-select" aria-label="Aller à un département"><option value="">Département…</option></select>
-        <button type="button" class="btn btn-ghost btn-small" data-locate>📍 Autour de moi</button>
-        <button type="button" class="btn btn-ghost btn-small" data-france>🇫🇷 France</button>
+        <button type="button" class="btn btn-ghost btn-small" data-locate>Autour de moi</button>
+        <button type="button" class="btn btn-ghost btn-small" data-france>France</button>
       </div>
     </div>
-    <div class="map-canvas" role="region" aria-label="Carte des psychologues en France"></div>
+    <div class="map-canvas" role="region" aria-label="Carte des professionnel·les de santé en France"></div>
     <p class="map-note muted">
+      Seuls les professionnel·les joignables par téléphone sont affichés, pour que tu puisses prendre rendez-vous directement.
       Zoome ou clique sur un département pour voir les adresses.
-      Étudiante ? Le <strong>BAPU</strong> et les services de santé universitaires proposent des consultations gratuites.
-      En libéral, demande si la ou le psychologue est partenaire de <strong>Mon soutien psy</strong> (séances remboursées).
     </p>
+    <p class="map-note muted" data-advice></p>
     <p class="map-source muted"></p>`;
 
   const countEl = el.querySelector('.map-count');
@@ -129,10 +136,20 @@ export async function renderPsyMap(el) {
   const datalist = el.querySelector('#map-cities');
   const select = el.querySelector('.map-select');
 
+  const ADVICE = {
+    psy: 'Étudiante ? Le <strong>BAPU</strong> et les services de santé universitaires proposent des consultations gratuites. '
+      + 'En libéral, demande si la ou le psychologue est partenaire de <strong>Mon soutien psy</strong> (séances remboursées).',
+    gyn: 'Étudiante ? Le service de santé universitaire de ton campus propose souvent des consultations de gynécologie gratuites. '
+      + 'Une sage-femme ou ton médecin généraliste peuvent aussi assurer ton suivi gynécologique.',
+  };
+  const state = { prof: 'psy', filter: 'all', query: '', me: null };
+  const noun = () => PROFESSIONS[state.prof].noun;
+
   let L;
   let index;
+  let deps;
   try {
-    [L, index] = await Promise.all([loadLeaflet(), loadIndex()]);
+    [L, index] = await Promise.all([loadLeaflet(), loadIndex(state.prof)]);
   } catch {
     countEl.textContent = '';
     canvas.innerHTML = '<p class="map-error">La carte n\'a pas pu se charger (connexion internet nécessaire pour le fond de carte).</p>';
@@ -140,11 +157,16 @@ export async function renderPsyMap(el) {
   }
   if (!el.isConnected) return; // le tableau de bord a été re-rendu entre-temps
 
-  el.querySelector('.map-source').textContent = `Source : ${index.source}`;
-  const deps = Object.entries(index.deps);
-  select.insertAdjacentHTML('beforeend', deps
-    .sort(([a], [b]) => a.localeCompare(b, 'fr', { numeric: true }))
-    .map(([code, d]) => `<option value="${code}">${code} — ${escapeHtml(d.name)}</option>`).join(''));
+  // Données de la profession choisie : source, liste des départements, conseil.
+  function useIndex(idx) {
+    index = idx;
+    deps = Object.entries(index.deps).sort(([a], [b]) => a.localeCompare(b, 'fr', { numeric: true }));
+    el.querySelector('.map-source').textContent = `Source : ${index.source}`;
+    el.querySelector('[data-advice]').innerHTML = ADVICE[state.prof];
+    select.innerHTML = '<option value="">Département…</option>' + deps
+      .map(([code, d]) => `<option value="${code}">${code} — ${escapeHtml(d.name)}</option>`).join('');
+  }
+  useIndex(index);
 
   const map = L.map(canvas, { preferCanvas: true, scrollWheelZoom: false, minZoom: 3 }).setView(FRANCE, FRANCE_ZOOM);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -160,8 +182,7 @@ export async function renderPsyMap(el) {
     ring: cssVar('--surface'), studentRing: cssVar('--sun'),
   };
   const layer = L.layerGroup().addTo(map);
-  const loaded = new Map(); // code département → lieux
-  const state = { filter: 'all', query: '', me: null };
+  const loaded = new Map(); // code département → lieux (profession en cours)
 
   const depBounds = (d) => L.latLngBounds([d.bbox[0], d.bbox[1]], [d.bbox[2], d.bbox[3]]);
   // Centre le département, assez zoomé pour afficher les adresses.
@@ -182,11 +203,11 @@ export async function renderPsyMap(el) {
         fillColor: state.filter === 'S' ? colors.S : state.filter === 'student' ? colors.student : colors.L,
         fillOpacity: 0.75,
       })
-        .bindTooltip(`${code} · ${escapeHtml(d.name)} : ${plural(n, 'psychologue')}`)
+        .bindTooltip(`${code} · ${escapeHtml(d.name)} : ${plural(n, noun())}`)
         .on('click', () => goToDep(d))
         .addTo(layer);
     }
-    countEl.textContent = `${plural(total, 'psychologue')} en France — zoome pour voir les adresses`;
+    countEl.textContent = `${plural(total, noun())} en France — zoome pour voir les adresses`;
   }
 
   // Vue détaillée : les adresses des départements visibles.
@@ -212,12 +233,12 @@ export async function renderPsyMap(el) {
           fillOpacity: place.approx ? 0.45 : 0.85,
         })
           .bindPopup(popupHtml(place, people), { maxHeight: 260 })
-          .bindTooltip(`${plural(people.length, 'psychologue')} · ${escapeHtml(place.city)}`)
+          .bindTooltip(`${plural(people.length, noun())} · ${escapeHtml(place.city)}`)
           .addTo(layer);
       }
     }
     countEl.textContent = loaded.size
-      ? `${plural(total, 'psychologue')} dans cette zone${q ? ` pour « ${state.query.trim()} »` : ''}`
+      ? `${plural(total, noun())} dans cette zone${q ? ` pour « ${state.query.trim()} »` : ''}`
       : 'Chargement des adresses…';
   }
 
@@ -236,9 +257,10 @@ export async function renderPsyMap(el) {
     const missing = needed.filter((c) => !loaded.has(c));
     if (missing.length) {
       countEl.textContent = 'Chargement des adresses…';
-      const results = await Promise.allSettled(missing.map(loadDep));
+      const prof = state.prof;
+      const results = await Promise.allSettled(missing.map((c) => loadDep(prof, c)));
+      if (token !== drawToken || !el.isConnected) return; // la vue ou la profession a changé entre-temps
       results.forEach((r, i) => { if (r.status === 'fulfilled') loaded.set(missing[i], r.value.places); });
-      if (token !== drawToken || !el.isConnected) return; // la vue a changé entre-temps
     }
     layer.clearLayers();
     drawPlaces();
@@ -255,7 +277,34 @@ export async function renderPsyMap(el) {
 
   // ---------- Contrôles ----------
 
+  async function switchProfession(prof) {
+    if (prof === state.prof) return;
+    state.prof = prof;
+    el.querySelectorAll('[data-prof]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.prof === prof)));
+    loaded.clear();
+    communes = [];
+    datalist.innerHTML = '';
+    drawToken++; // annule un chargement d'adresses en cours
+    layer.clearLayers();
+    countEl.textContent = 'Chargement…';
+    let idx;
+    try {
+      idx = await loadIndex(prof);
+    } catch {
+      countEl.textContent = 'Données indisponibles pour cette profession.';
+      return;
+    }
+    if (state.prof !== prof || !el.isConnected) return;
+    useIndex(idx);
+    draw();
+  }
+
   el.querySelector('.map-tools').onclick = (e) => {
+    const profChip = e.target.closest('[data-prof]');
+    if (profChip) {
+      switchProfession(profChip.dataset.prof);
+      return;
+    }
     const chip = e.target.closest('[data-filter]');
     if (chip) {
       state.filter = chip.dataset.filter;
@@ -297,7 +346,7 @@ export async function renderPsyMap(el) {
     searchTimer = setTimeout(async () => {
       const raw = input.value.trim();
       if (!communes.length) {
-        try { communes = await loadCommunes(); } catch { /* recherche par nom seulement */ }
+        try { communes = await loadCommunes(state.prof); } catch { /* recherche par nom seulement */ }
       }
       const exact = raw.match(/^(.*) \((\w+)\)$/); // valeur choisie dans les suggestions : « Rennes (35) »
       const q = normalize(exact ? exact[1] : raw);
@@ -306,7 +355,7 @@ export async function renderPsyMap(el) {
           .sort((a, b) => b[4] - a[4])
         : [];
       datalist.innerHTML = matches.slice(0, 8)
-        .map(([name, dep, , , n]) => `<option value="${escapeHtml(name)} (${dep})">${plural(n, 'psychologue')}</option>`).join('');
+        .map(([name, dep, , , n]) => `<option value="${escapeHtml(name)} (${dep})">${plural(n, noun())}</option>`).join('');
 
       const city = matches.find(([name]) => normalize(name) === q) || (exact && matches[0]);
       if (city) {
