@@ -116,81 +116,36 @@ export function renderCoverage(container, profile) {
 
   const section = document.createElement('section');
 
-  section.className = 'card';
-
-  section.style.cssText = `
-    display:grid;
-    gap:18px;
-    margin-top:24px;
-    border-left:5px solid var(--accent);
-  `;
+  section.className = 'card aides-section aides-coverage';
 
   section.innerHTML = `
-    <p class="eyebrow">
-      Ma couverture sociale
-    </p>
+    <p class="eyebrow">Ma couverture sociale</p>
 
     <h2>Mon bilan de couverture santé</h2>
 
-    <div style="
-      background:var(--accent-soft);
-      border-radius:var(--radius-sm);
-      padding:20px;
-      display:grid;
-      gap:10px
-    ">
-
-      <p style="
-        color:var(--accent);
-        font-weight:700
-      ">
-        ${guide.status}
-      </p>
-
-      <h2>${guide.title}</h2>
-
+    <div class="aides-highlight">
+      <p class="aides-status">${guide.status}</p>
+      <h3>${guide.title}</h3>
       <p>${guide.description}</p>
-
     </div>
 
-    <h2>Mes prochaines démarches</h2>
+    <h3>Mes prochaines démarches</h3>
 
-    <div style="display:grid;gap:12px">
-
-      ${guide.actions.map((action, index) => `
-        <label style="
-          display:flex;
-          align-items:center;
-          gap:12px;
-          border:1px solid var(--line);
-          padding:16px;
-          border-radius:var(--radius-sm);
-          cursor:pointer
-        ">
-
-          <input
-            type="checkbox"
-            style="accent-color:var(--accent)"
-          >
-
+    <div class="aides-choices aides-choices-list">
+      ${guide.actions.map((action) => `
+        <label class="aides-choice">
+          <input type="checkbox">
           <span>${action}</span>
-
         </label>
       `).join('')}
-
     </div>
 
     <p class="muted" data-coverage-progress>
       0 démarche sur ${guide.actions.length} réalisée
     </p>
 
-    <a class="btn btn-primary"
-       href="${guide.link}"
-       target="_blank"
-       rel="noopener noreferrer">
-
+    <a class="btn btn-primary" href="${guide.link}" target="_blank" rel="noopener noreferrer">
       Accéder aux démarches officielles ↗
-
     </a>
 
     <p class="muted">

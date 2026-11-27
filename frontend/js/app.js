@@ -1,4 +1,4 @@
-﻿// Point d'entrée : routage par hash et tableau de bord.
+// Point d'entrée : routage par hash et tableau de bord.
 
 import { addDays, capitalize, diffDays, formatLong, formatShort, fromKey, toKey, today } from './dates.js';
 import * as store from './storage.js';

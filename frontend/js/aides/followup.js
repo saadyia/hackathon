@@ -92,9 +92,7 @@ export function renderFollowups(form) {
   if (!panel) return;
 
   const section = document.createElement('div');
-
-  section.style.cssText =
-    'display:grid;gap:20px;margin-top:24px';
+  section.className = 'aides-followups';
 
   panel.appendChild(section);
 
@@ -111,52 +109,20 @@ export function renderFollowups(form) {
         const detail = DETAILS[need];
 
         return `
-          <fieldset style="
-            border:1px solid var(--line);
-            border-radius:var(--radius);
-            padding:20px;
-            background:var(--surface-2)
-          ">
-
-            <legend style="
-              color:var(--primary);
-              font-weight:700;
-              padding:0 8px
-            ">
-              ${detail.title}
-            </legend>
-
-            <p class="muted" style="margin-bottom:12px">
-              Facultatif — plusieurs réponses possibles.
-            </p>
-
-            <div style="display:grid;gap:14px">
-
+          <fieldset class="aides-followup">
+            <legend class="aides-label">${detail.title}</legend>
+            <p class="muted">Facultatif, plusieurs réponses possibles.</p>
+            <div class="aides-choices">
               ${detail.options.map(([value, label]) => {
                 const key = need + ':' + value;
-
                 return `
-                  <label style="
-                    display:flex;
-                    align-items:center;
-                    gap:12px;
-                    cursor:pointer
-                  ">
-                    <input
-                      type="checkbox"
-                      name="details"
-                      value="${key}"
-                      ${selectedDetails.has(key)
-                        ? 'checked' : ''}
-                      style="accent-color:var(--primary)"
-                    >
-                    ${label}
+                  <label class="aides-choice">
+                    <input type="checkbox" name="details" value="${key}" ${selectedDetails.has(key) ? 'checked' : ''}>
+                    <span>${label}</span>
                   </label>
                 `;
               }).join('')}
-
             </div>
-
           </fieldset>
         `;
       }).join('');

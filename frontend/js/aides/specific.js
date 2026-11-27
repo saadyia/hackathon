@@ -33,8 +33,7 @@ function renderMental(container, profile) {
 
   const section = document.createElement('section');
 
-  section.className = 'card';
-  section.style.marginTop = '24px';
+  section.className = 'card aides-section';
 
   section.innerHTML = `
     <p class="eyebrow">Mon budget santé mentale</p>
@@ -46,7 +45,7 @@ function renderMental(container, profile) {
       et leur coût potentiel.
     </p>
 
-    <form style="display:grid;gap:20px;margin-top:24px">
+    <form class="aides-form">
 
       ${student ? `
         <label>
@@ -100,20 +99,15 @@ function renderMental(container, profile) {
 
     </form>
 
-    <div class="specific-result"
-         aria-live="polite"
-         style="margin-top:24px">
-    </div>
+    <div class="specific-result" aria-live="polite"></div>
 
-    <p class="muted" style="margin-top:20px">
+    <p class="muted">
       Simulation du régime standard, sous réserve
       d'éligibilité et de l'avis des professionnels.
       Certains régimes particuliers peuvent modifier
       les droits et les remboursements.
     </p>
   `;
-
-  styleFields(section);
 
   container.appendChild(section);
 
@@ -151,23 +145,14 @@ function renderMental(container, profile) {
     const maxCost = remainingGeneral * costPerSession;
 
     result.innerHTML = `
-      <div style="display:grid;gap:16px">
+      <div class="aides-results-stack">
 
         ${student ? `
-          <div style="
-            background:var(--primary-soft);
-            padding:20px;
-            border-radius:var(--radius)
-          ">
+          <div class="aides-highlight aides-highlight-primary">
 
             <p class="eyebrow">Santé Psy Étudiant</p>
 
-            <strong style="
-              color:var(--primary);
-              font-size:36px
-            ">
-              ${remainingStudent}
-            </strong>
+            <p class="aides-figure">${remainingStudent}</p>
 
             <p>Séances gratuites restantes</p>
 
@@ -181,20 +166,11 @@ function renderMental(container, profile) {
         ` : ''}
 
         ${insured ? `
-          <div style="
-            background:var(--accent-soft);
-            padding:20px;
-            border-radius:var(--radius)
-          ">
+          <div class="aides-highlight">
 
             <p class="eyebrow">Mon soutien psy</p>
 
-            <strong style="
-              color:var(--accent);
-              font-size:36px
-            ">
-              ${remainingGeneral}
-            </strong>
+            <p class="aides-figure">${remainingGeneral}</p>
 
             <p>Séances potentiellement remboursables</p>
 
@@ -216,13 +192,9 @@ function renderMental(container, profile) {
           </div>
         ` : ''}
 
-        <div style="
-          background:var(--surface-2);
-          padding:20px;
-          border-radius:var(--radius)
-        ">
+        <div class="aides-highlight aides-highlight-neutral">
 
-          <h2>Mon estimation globale</h2>
+          <h3>Mon estimation globale</h3>
 
           <p>
             Jusqu'à
@@ -230,14 +202,11 @@ function renderMental(container, profile) {
             séances restantes dans les dispositifs.
           </p>
 
-          <strong style="
-            color:var(--accent);
-            font-size:30px
-          ">
+          <p class="aides-figure">
             ${unknownCost
               ? '0 à ' + maxCost
               : maxCost} €
-          </strong>
+          </p>
 
           <p>Reste à charge total estimé</p>
 
@@ -268,15 +237,14 @@ function renderMaternity(container, profile) {
 
   const section = document.createElement('section');
 
-  section.className = 'card';
-  section.style.marginTop = '24px';
+  section.className = 'card aides-section';
 
   section.innerHTML = `
     <p class="eyebrow">Grossesse et maternité</p>
 
     <h2>Comment mes soins sont-ils remboursés ?</h2>
 
-    <form style="display:grid;gap:20px;margin-top:24px">
+    <form class="aides-form">
 
       <label>
         <strong>À quelle période te trouves-tu ?</strong>
@@ -334,13 +302,9 @@ function renderMaternity(container, profile) {
 
     </form>
 
-    <div class="specific-result"
-         aria-live="polite"
-         style="margin-top:24px">
-    </div>
+    <div class="specific-result" aria-live="polite"></div>
   `;
 
-  styleFields(section);
   container.appendChild(section);
 
   const form = section.querySelector('form');
@@ -436,22 +400,11 @@ function renderMaternity(container, profile) {
     }
 
     result.innerHTML = `
-      <div style="
-        background:var(--accent-soft);
-        padding:24px;
-        border-radius:var(--radius);
-        display:grid;
-        gap:14px
-      ">
+      <div class="aides-highlight">
 
         <p class="eyebrow">Ma prise en charge</p>
 
-        <strong style="
-          color:var(--accent);
-          font-size:30px
-        ">
-          ${amount}
-        </strong>
+        <p class="aides-figure">${amount}</p>
 
         <p>${explanation}</p>
 
@@ -474,26 +427,3 @@ function renderMaternity(container, profile) {
   });
 }
 
-// ==================================
-// PRESENTATION DES CHAMPS
-// ==================================
-
-function styleFields(section) {
-
-  section.querySelectorAll('input, select')
-    .forEach(element => {
-
-      element.style.cssText = `
-        display:block;
-        width:100%;
-        padding:14px;
-        margin-top:10px;
-        border:1px solid var(--line);
-        border-radius:var(--radius-sm);
-        background:var(--surface);
-        color:var(--ink);
-        font:inherit;
-      `;
-
-    });
-}
