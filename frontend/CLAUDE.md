@@ -18,7 +18,8 @@ js/calendar.js      # calendrier mensuel (règles, prédictions, fenêtre fertil
 js/cycle.js         # calculs : périodes, moyennes, prédictions, phase du cycle
 js/storage.js       # persistance localStorage + générateur de données de démo
 js/dates.js         # utilitaires de dates (clés locales "YYYY-MM-DD")
-js/pages.js         # contenu des pages S'informer / Se soigner / Se comprendre
+js/pages/index.js   # registre des pages secondaires
+js/pages/<pilier>.js # une page par pilier (s-informer, se-soigner, se-comprendre)
 ```
 
 ## Conventions

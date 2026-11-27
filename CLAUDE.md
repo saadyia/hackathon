@@ -43,7 +43,8 @@ python3 -m http.server 8000 --directory frontend
 - **Pas de promesse médicale :** les prédictions et conseils sont toujours présentés comme indicatifs (pas de contraception, pas de diagnostic).
 - **Accessibilité :** boutons natifs, `aria-pressed` pour les choix, navigation clavier, contrastes suffisants, mobile en priorité.
 - **Secrets :** `.env` jamais commité.
-- **Git :** à la fin de chaque étape (fonctionnalité, mise à jour de docs…), faire un commit clair en français et le pousser sur GitHub (`main`).
+- **Git (travail à 4) :** suivre `CONTRIBUTING.md`. Jamais de commit direct sur `main` : une branche `prenom/sujet` par tâche, `git rebase origin/main` avant de pousser, puis Pull Request. À la fin de chaque étape : commit clair en français + push de la branche.
+- **Éviter les conflits :** un pilier = un fichier (`frontend/js/pages/<pilier>.js`). Modifier un fichier partagé (CSS, `index.html`, `pages/index.js`, docs) seulement si la tâche l'exige, avec des changements limités.
 
 ## 4. Fichiers de contexte secondaires
 <!-- À lire à la demande selon la tâche. Pour charger un fichier systématiquement,
@@ -52,5 +53,6 @@ python3 -m http.server 8000 --directory frontend
 - `docs/specs.md` — spécifications fonctionnelles, user stories, périmètre MVP
 - `docs/api.md` — contrat d'API (endpoints, schémas, erreurs)
 - `docs/todo.md` — backlog, tâches en cours, décisions en attente
+- `CONTRIBUTING.md` — méthode Git de l'équipe (branches, PR, conflits)
 - `frontend/CLAUDE.md` — règles spécifiques au frontend
 - `backend/CLAUDE.md` — règles spécifiques au backend
