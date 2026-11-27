@@ -19,16 +19,18 @@ Application de santé féminine pour les **étudiantes**, développée par une �
 <!-- Langages, frameworks, BDD, services externes, hébergement. -->
 | Couche     | Technologie |
 |------------|-------------|
-| Couche     | Technologie |
-|------------|-------------|
 | Frontend   | HTML + CSS + JavaScript vanilla (modules ES), **sans build ni dépendance** |
-| Backend    | _à définir_ (pressenti : Python, pour la partie ML) |
+| Backend    | Python 3.9 + FastAPI + PyTorch (`backend/`, modèle `cycle_study_dl.pth`) |
 | Données    | `localStorage` du navigateur pour l'instant (`frontend/js/storage.js`) |
 | Déploiement| _à définir_ (tout hébergeur statique suffit pour le frontend) |
 
 ```bash
-# Lancement (dev) — depuis la racine du projet, puis ouvrir http://localhost:8000
-python3 -m http.server 8000 --directory frontend
+# API (dev) — port 8000
+cd backend && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
+./venv/bin/uvicorn main:app --reload --port 8000
+
+# Frontend (dev) — depuis la racine, puis ouvrir http://localhost:5500
+python3 -m http.server 5500 --directory frontend
 
 # Build : aucun
 # Tests / lint : à définir
@@ -39,7 +41,7 @@ python3 -m http.server 8000 --directory frontend
 <!-- Règles NON négociables que Claude doit toujours respecter. -->
 - **Langue :** interface et contenus en français, tutoiement de l'utilisatrice, ton bienveillant et non culpabilisant.
 - **Code :** identifiants en anglais (`camelCase`), commentaires en français.
-- **Données de santé = sensibles :** rien ne quitte l'appareil sans consentement explicite ; jamais de données réelles dans le dépôt.
+- **Données de santé = sensibles :** rien ne quitte l'appareil sans consentement explicite ; jamais de données réelles dans le dépôt. Exception validée par l'équipe : les données **publiques en Licence Ouverte** (ex. annuaire des professionnels de santé RPPS dans `frontend/data/psy/`), avec leur source citée.
 - **Pas de promesse médicale :** les prédictions et conseils sont toujours présentés comme indicatifs (pas de contraception, pas de diagnostic).
 - **Accessibilité :** boutons natifs, `aria-pressed` pour les choix, navigation clavier, contrastes suffisants, mobile en priorité.
 - **Secrets :** `.env` jamais commité.

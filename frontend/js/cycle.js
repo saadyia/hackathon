@@ -3,20 +3,24 @@
 // Indicatif uniquement : ne pas utiliser comme moyen de contraception.
 
 import { addDays, diffDays, fromKey, toKey, today } from './dates.js';
+import { isPeriodDay } from './questions.js';
 
 const DEFAULT_CYCLE = 28;
 const DEFAULT_PERIOD = 5;
 const MAX_LATE_DAYS = 14; // au-delà, on considère que la saisie a été interrompue
 const avg = (arr) => arr.reduce((s, v) => s + v, 0) / arr.length;
 
-/** Regroupe les jours "règles" consécutifs (1 jour d'oubli toléré) en périodes. */
+/**
+ * Regroupe les jours "règles" consécutifs (1 jour d'oubli toléré) en périodes.
+ * Un jour marqué « Premier jour » ouvre toujours une nouvelle période.
+ */
 export function getPeriods(entries) {
-  const keys = Object.keys(entries).filter((k) => entries[k]?.period === true).sort();
+  const keys = Object.keys(entries).filter((k) => isPeriodDay(entries[k])).sort();
   const periods = [];
   for (const key of keys) {
     const d = fromKey(key);
     const last = periods.at(-1);
-    if (last && diffDays(d, last.end) <= 2) last.end = d;
+    if (last && entries[key].period !== 'first' && diffDays(d, last.end) <= 2) last.end = d;
     else periods.push({ start: d, end: d });
   }
   return periods;
@@ -103,7 +107,7 @@ export function getCurrentStatus(stats, preds, entries, ref = today()) {
   const stale = cycleDay > stats.cycleLength + MAX_LATE_DAYS;
 
   let phase;
-  if (entries[refKey]?.period) phase = 'menstruation';
+  if (isPeriodDay(entries[refKey])) phase = 'menstruation';
   else if (preds.daysLate > 0) phase = 'late';
   else if (stale) phase = null;
   else if (cycleDay <= stats.periodLength && diffDays(ref, stats.lastPeriod.end) <= 1) phase = 'menstruation';
