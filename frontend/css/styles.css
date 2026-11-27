@@ -241,7 +241,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border: 1.5px solid var(--line); border-radius: 999px;
   font: inherit; color: var(--ink); background: var(--surface);
 }
-.map-input:focus { border-color: var(--primary); outline: none; }
+.map-input:focus, .map-select:focus { border-color: var(--primary); outline: none; }
+.map-select {
+  flex: 0 1 220px; min-height: 42px; padding: 8px 12px;
+  border: 1.5px solid var(--line); border-radius: 999px;
+  font: inherit; color: var(--ink); background: var(--surface);
+}
 .map-canvas {
   height: clamp(340px, 60vh, 520px); width: 100%;
   border-radius: var(--radius-sm); overflow: hidden;

@@ -41,7 +41,7 @@ python3 -m http.server 5500 --directory frontend
 <!-- Règles NON négociables que Claude doit toujours respecter. -->
 - **Langue :** interface et contenus en français, tutoiement de l'utilisatrice, ton bienveillant et non culpabilisant.
 - **Code :** identifiants en anglais (`camelCase`), commentaires en français.
-- **Données de santé = sensibles :** rien ne quitte l'appareil sans consentement explicite ; jamais de données réelles dans le dépôt. Exception validée par l'équipe : les données **publiques en Licence Ouverte** (ex. annuaire des professionnels de santé RPPS dans `frontend/data/`), avec leur source citée.
+- **Données de santé = sensibles :** rien ne quitte l'appareil sans consentement explicite ; jamais de données réelles dans le dépôt. Exception validée par l'équipe : les données **publiques en Licence Ouverte** (ex. annuaire des professionnels de santé RPPS dans `frontend/data/psy/`), avec leur source citée.
 - **Pas de promesse médicale :** les prédictions et conseils sont toujours présentés comme indicatifs (pas de contraception, pas de diagnostic).
 - **Accessibilité :** boutons natifs, `aria-pressed` pour les choix, navigation clavier, contrastes suffisants, mobile en priorité.
 - **Secrets :** `.env` jamais commité.
