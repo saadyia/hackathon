@@ -5,7 +5,7 @@ import * as store from './storage.js';
 import { PHASES, getCurrentStatus, getCycleStats, getPredictions } from './cycle.js';
 import { renderCalendar } from './calendar.js';
 import { renderCheckin } from './checkin.js';
-import { PAGES } from './pages.js';
+import { PAGES } from './pages/index.js';
 
 const main = document.getElementById('main');
 const now = today();
