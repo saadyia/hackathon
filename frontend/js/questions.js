@@ -5,7 +5,7 @@
 //   toggle : Oui / Non (valeur booléenne)
 //   single : un seul choix parmi `options` (layout: 'rating' pour une échelle 1-5 avec emojis)
 //   multi  : plusieurs choix ; `exclusive` = valeur qui désélectionne les autres (ex : "aucune")
-//   scale  : curseur numérique entre `min` et `max`
+//   scale  : curseur numérique entre `min` et `max` (`step` : pas, 1 par défaut ; `initial` : position de départ)
 //   text   : champ libre
 // `showIf(answers)` : la question n'apparaît que si la fonction renvoie true.
 
@@ -15,7 +15,7 @@ export const SECTIONS = [
   {
     id: 'cycle',
     title: 'Mon cycle',
-    icon: '🌸',
+    icon: '🌗',
     questions: [
       { id: 'period', label: "As-tu tes règles aujourd'hui ?", type: 'toggle' },
       {
@@ -47,6 +47,11 @@ export const SECTIONS = [
         showIf: (a) => a.pains?.length > 0 && !a.pains.includes('none'),
       },
       {
+        id: 'crampsLevel', label: 'Intensité des crampes', type: 'scale', min: 0, max: 5,
+        minLabel: 'Aucune', maxLabel: 'Très fortes',
+        showIf: (a) => a.pains?.includes('cramps'),
+      },
+      {
         id: 'mood', label: 'Comment te sens-tu ?', type: 'multi',
         options: [
           { value: 'calm', emoji: '😌', label: 'Sereine' },
@@ -64,6 +69,30 @@ export const SECTIONS = [
       {
         id: 'sleep', label: 'Qualité de ton sommeil', type: 'single', layout: 'rating',
         options: rating([['😫', 'Très mauvais'], ['😕', 'Mauvais'], ['😐', 'Moyen'], ['🙂', 'Bon'], ['😴', 'Excellent']]),
+      },
+    ],
+  },
+  {
+    // Critères utilisés par l'analyse de capacité cognitive (voir js/api.js).
+    id: 'focusBody',
+    title: 'Mon énergie pour étudier',
+    icon: '🧠',
+    questions: [
+      {
+        id: 'fatigue', label: 'Ton niveau de fatigue', type: 'scale', min: 0, max: 5,
+        minLabel: 'Reposée', maxLabel: 'Épuisée',
+      },
+      {
+        id: 'brainFog', label: 'Brouillard mental (difficulté à penser clairement)', type: 'scale', min: 0, max: 5,
+        minLabel: 'Esprit clair', maxLabel: 'Très embrumé',
+      },
+      {
+        id: 'moodScore', label: 'Ton moral global', type: 'single', layout: 'rating',
+        options: rating([['😞', 'Très bas'], ['😕', 'Bas'], ['😐', 'Moyen'], ['🙂', 'Bon'], ['😄', 'Excellent']]),
+      },
+      {
+        id: 'sleepHours', label: "Combien d'heures as-tu dormi ?", type: 'scale', min: 0, max: 12, step: 0.5, initial: 7,
+        minLabel: '0 h', maxLabel: '12 h',
       },
     ],
   },

@@ -4,7 +4,7 @@
 
 ## Stack & commandes
 - HTML/CSS/JS vanilla, modules ES natifs : **aucun build, aucune dépendance npm**.
-- Lancer : `python3 -m http.server 8000 --directory frontend` (les modules ES ne fonctionnent pas en `file://`).
+- Lancer : `python3 -m http.server 5500 --directory frontend` (les modules ES ne fonctionnent pas en `file://`). Le port 8000 est réservé à l'API (`backend/`).
 - Polices Google Fonts (DM Sans, Fraunces) avec repli sur les polices système.
 
 ## Structure des dossiers
@@ -16,7 +16,8 @@ js/questions.js     # ★ configuration des questions du suivi quotidien (pilot�
 js/checkin.js       # génère le formulaire à partir de questions.js
 js/calendar.js      # calendrier mensuel (règles, prédictions, fenêtre fertile)
 js/cycle.js         # calculs : périodes, moyennes, prédictions, phase du cycle
-js/storage.js       # persistance localStorage + générateur de données de démo
+js/storage.js       # persistance localStorage (saisies, tâches de révision, analyses) + données de démo
+js/api.js           # client de l'API Deep Learning (/api/predict, /api/sos-rebalance) : seul module réseau
 js/dates.js         # utilitaires de dates (clés locales "YYYY-MM-DD")
 js/pages/index.js   # registre des pages secondaires
 js/pages/<pilier>.js # une page par pilier (s-informer, se-soigner, se-comprendre)
@@ -28,4 +29,5 @@ js/pages/<pilier>.js # une page par pilier (s-informer, se-soigner, se-comprendr
 - Dates : toujours passer par `toKey()` / `fromKey()` de `dates.js`, jamais `toISOString()` (décalage UTC).
 - Couleurs : uniquement via les variables CSS de `:root`.
 - Un module = une responsabilité ; les rendus remplacent `innerHTML` d'un conteneur et réattachent leurs événements.
-- Toute la donnée passe par `storage.js` : c'est le seul fichier à modifier pour brancher le backend.
+- Toute la donnée locale passe par `storage.js` ; tous les appels réseau passent par `api.js` (mapping des réponses du check-in → critères du modèle dans `buildPredictPayload`).
+- Direction artistique : violet (`--primary`, identité/actions) + jaune (`--sun*`, énergie/SOS). Pas de rose. Le jaune ne sert jamais de couleur de texte sur fond clair.

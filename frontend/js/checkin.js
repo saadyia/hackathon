@@ -16,7 +16,7 @@ function renderQuestion(q) {
   if (q.type === 'scale') {
     control = `
       <div class="scale">
-        <input type="range" id="in-${q.id}" data-scale="${q.id}" min="${q.min}" max="${q.max}" step="1" value="${q.min}" aria-labelledby="${labelId}">
+        <input type="range" id="in-${q.id}" data-scale="${q.id}" min="${q.min}" max="${q.max}" step="${q.step || 1}" value="${q.initial ?? q.min}" aria-labelledby="${labelId}">
         <output class="scale-value" data-output="${q.id}">–</output>
       </div>
       <div class="scale-labels"><span>${q.minLabel}</span><span>${q.maxLabel}</span></div>`;
@@ -116,6 +116,12 @@ export function renderCheckin(el, { dateKey, entry, dayInfo, onSave, onDelete })
 
   form.addEventListener('click', (e) => {
     if (e.target.closest('[data-action="delete"]')) return onDelete(dateKey);
+    // Un clic sur un curseur pas encore touché enregistre sa valeur (ex : 0 = « aucune »).
+    const range = e.target.dataset?.scale;
+    if (range && draft[range] === undefined) {
+      draft[range] = Number(e.target.value);
+      return sync();
+    }
     const btn = e.target.closest('button[data-q]');
     if (!btn) return;
     const q = QUESTIONS[btn.dataset.q];
