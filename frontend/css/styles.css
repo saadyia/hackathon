@@ -228,6 +228,37 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .field input:focus, .field select:focus { border-color: var(--primary); outline: none; }
 
+/* ===== Carte des psychologues ===== */
+.map-card { margin-top: 24px; display: grid; gap: 14px; }
+.map-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 8px 16px; }
+.map-head h2 { margin-top: 4px; }
+.map-count { font-size: .9rem; font-weight: 500; }
+.map-tools { display: grid; gap: 10px; }
+.map-tools .option[aria-pressed="true"] { background: var(--primary-soft); }
+.map-search { display: flex; flex-wrap: wrap; gap: 8px; }
+.map-input {
+  flex: 1 1 220px; min-height: 42px; padding: 8px 14px;
+  border: 1.5px solid var(--line); border-radius: 999px;
+  font: inherit; color: var(--ink); background: var(--surface);
+}
+.map-input:focus { border-color: var(--primary); outline: none; }
+.map-canvas {
+  height: clamp(340px, 60vh, 520px); width: 100%;
+  border-radius: var(--radius-sm); overflow: hidden;
+  background: var(--surface-2); isolation: isolate;
+}
+.map-error { padding: 40px 16px; text-align: center; color: var(--muted); }
+.map-note { font-size: .88rem; }
+.map-source { font-size: .75rem; }
+.map-popup { font-family: var(--font); font-size: .85rem; color: var(--ink); }
+.map-popup ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.map-popup a { color: var(--primary); }
+.map-where { margin-bottom: 4px; color: var(--muted); }
+.map-site { color: var(--muted); font-size: .8rem; }
+.map-badge { font-size: .68rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; margin-left: 4px; }
+.map-badge-L { background: var(--primary-soft); color: var(--primary); }
+.map-badge-S { background: var(--sun-soft); color: var(--sun-ink); }
+
 /* ===== Calendar ===== */
 .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .cal-title { text-transform: capitalize; }

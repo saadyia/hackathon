@@ -6,6 +6,7 @@ import * as api from './api.js';
 import { PHASES, getCurrentStatus, getCycleStats, getPredictions } from './cycle.js';
 import { renderCalendar } from './calendar.js';
 import { renderCheckin } from './checkin.js';
+import { renderPsyMap } from './map.js';
 import { PAGES } from './pages/index.js';
 
 const main = document.getElementById('main');
@@ -92,6 +93,7 @@ function renderDashboard() {
       <section class="card calendar-card" id="calendar"></section>
       <section class="card checkin-card" id="checkin"></section>
     </div>
+    <section class="card map-card" id="psy-map"></section>
     <footer class="dash-footer">
       <p class="muted">Tes données restent sur cet appareil : l'analyse est calculée par un serveur local (localhost). Les prédictions sont indicatives et ne remplacent ni un avis médical ni une contraception.</p>
       <div class="footer-actions">
@@ -132,6 +134,8 @@ function renderDashboard() {
   };
 
   refreshAll();
+  // Rendue une seule fois par affichage de l'accueil (indépendante des saisies).
+  renderPsyMap(document.getElementById('psy-map'));
 }
 
 function refreshAll() {

@@ -19,6 +19,8 @@ js/cycle.js         # calculs : périodes, moyennes, prédictions, phase du cycl
 js/storage.js       # persistance localStorage (saisies, tâches de révision, analyses) + données de démo
 js/api.js           # client de l'API Deep Learning (/api/predict, /api/sos-rebalance) : seul module réseau
 js/dates.js         # utilitaires de dates (clés locales "YYYY-MM-DD")
+js/map.js           # carte des psychologues d'Ille-et-Vilaine (Leaflet chargé à la demande depuis unpkg)
+data/psychologues-35.json # données de la carte : Annuaire Santé (RPPS) géocodé, regroupé par adresse
 js/pages/index.js   # registre des pages secondaires
 js/pages/<pilier>.js # une page par pilier (s-informer, se-soigner, se-comprendre)
 ```
