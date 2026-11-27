@@ -15,8 +15,6 @@ const state = {
   selectedKey: toKey(now),
   viewYear: now.getFullYear(),
   viewMonth: now.getMonth(),
-  analyzing: false,
-  analysisError: null, // 'no_cycle' | 'offline' | 'server'
   sos: null, // résultat du dernier mode SOS (bannière + capacités prévues)
   sosLoading: false,
 };
@@ -58,7 +56,6 @@ function route() {
 function renderPage(page) {
   main.innerHTML = `
     <section class="page">
-      <p class="page-icon" aria-hidden="true">${page.icon}</p>
       <h1>${page.title}</h1>
       <p class="lead">${page.intro}</p>
       <div class="card">
@@ -73,27 +70,26 @@ function renderPage(page) {
 
 function renderDashboard() {
   main.innerHTML = `
+    <section class="card map-card" id="psy-map"></section>
     <section class="hero">
       <div class="hero-text">
         <p class="eyebrow">${capitalize(formatLong(now))}</p>
-        <h1>Bonjour 👋</h1>
+        <h1>Bonjour</h1>
         <p class="lead">Comment s'est passée ta journée ? Quelques questions suffisent pour mieux comprendre ton corps et ton rythme d'études.</p>
         <div class="hero-actions">
           <button type="button" class="btn btn-primary" data-action="fill-today">Remplir ma journée</button>
-          <button type="button" class="btn btn-sos" data-action="sos"><span aria-hidden="true">🛟</span> Mode SOS / Journée difficile</button>
+          <button type="button" class="btn btn-sos" data-action="sos">Mode SOS / Journée difficile</button>
         </div>
       </div>
       <div id="status" class="status-card"></div>
     </section>
     <div class="insights">
-      <section class="card capacity-card" id="capacity" aria-live="polite"></section>
       <section class="card planning-card" id="planning"></section>
     </div>
     <div class="dashboard">
       <section class="card calendar-card" id="calendar"></section>
       <section class="card checkin-card" id="checkin"></section>
     </div>
-    <section class="card map-card" id="psy-map"></section>
     <footer class="dash-footer">
       <p class="muted">Tes données restent sur cet appareil : l'analyse est calculée par un serveur local (localhost). Les prédictions sont indicatives et ne remplacent ni un avis médical ni une contraception.</p>
       <div class="footer-actions">
@@ -114,20 +110,18 @@ function renderDashboard() {
       renderPlanning();
     } else if (action === 'task-done') {
       store.deleteTask(e.target.closest('[data-id]').dataset.id);
-      toast('Bravo, une de moins ✓');
+      toast('Bravo, une de moins !');
       refreshAll();
     } else if (action === 'demo') {
       if (store.hasData() && !confirm('Remplacer tes données actuelles par des données de démonstration ?')) return;
       store.loadDemoData();
       state.sos = null;
-      state.analysisError = null;
       toast('Données de démo chargées');
       refreshAll();
     } else if (action === 'clear') {
       if (!confirm('Effacer définitivement toutes tes données ?')) return;
       store.clearAll();
       state.sos = null;
-      state.analysisError = null;
       toast('Données effacées');
       refreshAll();
     }
@@ -141,7 +135,6 @@ function renderDashboard() {
 function refreshAll() {
   const cycle = computeCycle();
   renderStatus(cycle);
-  renderCapacity();
   renderPlanning();
   renderCal(cycle);
   renderCheckinPanel(cycle);
@@ -162,7 +155,6 @@ function renderStatus({ status, stats }) {
   if (!status) {
     el.innerHTML = `
       <p class="status-kicker">Mon cycle</p>
-      <p class="status-big">🌱</p>
       <p class="status-phase">Bienvenue !</p>
       <p class="muted">Indique tes dernières règles dans le calendrier pour activer les prévisions.</p>`;
     return;
@@ -180,7 +172,7 @@ function renderStatus({ status, stats }) {
     <p class="status-kicker">Mon cycle</p>
     ${status.cycleDay
       ? `<p class="status-big"><span class="status-day">${status.cycleDay}</span><span class="status-unit">e jour</span></p>`
-      : '<p class="status-big">🔄</p>'}
+      : ''}
     <p class="status-phase">${phase ? phase.label : 'Pas de saisie récente'}</p>
     <p class="status-next">${next}</p>
     ${phase ? `<p class="status-tip">${phase.tip}</p>` : '<p class="status-tip">Mets à jour tes dernières règles pour des prévisions fiables.</p>'}
@@ -212,24 +204,19 @@ function renderCal({ entries, predictions }) {
 function renderCheckinPanel({ entries, predictions }) {
   const key = state.selectedKey;
   let dayInfo = '';
-  if (predictions.periodDays.has(key)) dayInfo = '🩸 Règles prévues ce jour-là';
-  else if (predictions.ovulationDays.has(key)) dayInfo = '🥚 Ovulation estimée';
-  else if (predictions.fertileDays.has(key)) dayInfo = '🌿 Fenêtre fertile estimée';
+  if (predictions.periodDays.has(key)) dayInfo = 'Règles prévues ce jour-là';
+  else if (predictions.ovulationDays.has(key)) dayInfo = 'Ovulation estimée';
+  else if (predictions.fertileDays.has(key)) dayInfo = 'Fenêtre fertile estimée';
 
   renderCheckin(document.getElementById('checkin'), {
     dateKey: key,
     entry: entries[key],
     dayInfo,
     onSave: (dateKey, data) => {
-      if (Object.keys(data).length === 0) return toast('Réponds à au moins une question 🙂');
+      if (Object.keys(data).length === 0) return toast('Réponds à au moins une question');
       store.setEntry(dateKey, data);
-      toast('Journée enregistrée ✨');
+      toast('Journée enregistrée');
       refreshAll();
-      // L'analyse de capacité porte sur la journée en cours.
-      if (dateKey === toKey(now)) {
-        analyzeToday(data);
-        document.getElementById('capacity').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
     },
     onDelete: (dateKey) => {
       if (!confirm('Effacer les réponses de cette journée ?')) return;
@@ -238,82 +225,6 @@ function renderCheckinPanel({ entries, predictions }) {
       refreshAll();
     },
   });
-}
-
-// ---------- Capacité cognitive (modèle Deep Learning) ----------
-
-const RECO_ICONS = { rest: '🛌', light_review: '🗂️', standard_study: '📘', deep_work: '🚀' };
-
-async function analyzeToday(entry) {
-  const { status } = computeCycle();
-  const todayKey = toKey(now);
-  state.analysisError = null;
-  if (!status?.cycleDay) {
-    state.analysisError = 'no_cycle';
-    return renderCapacity();
-  }
-  const { payload, missing } = api.buildPredictPayload(entry, status);
-  state.analyzing = true;
-  renderCapacity();
-  try {
-    const result = await api.predict(payload);
-    store.setAnalysis(todayKey, { ...result, missing });
-  } catch (err) {
-    state.analysisError = err.message === 'offline' ? 'offline' : 'server';
-  } finally {
-    state.analyzing = false;
-    renderCapacity();
-  }
-}
-
-function renderCapacity() {
-  const el = document.getElementById('capacity');
-  if (!el) return;
-  const head = `<p class="eyebrow">Capacité cognitive du jour</p>`;
-  const analysis = store.getAnalysis(toKey(now));
-
-  if (state.analyzing) {
-    el.innerHTML = `${head}<div class="capacity-empty"><p class="empty-emoji" aria-hidden="true">🧠</p><p>Analyse en cours…</p></div>`;
-    return;
-  }
-  if (state.analysisError) {
-    const messages = {
-      no_cycle: 'Indique tes dernières règles dans le calendrier : le modèle a besoin de ton jour de cycle.',
-      offline: `Le serveur d'analyse est injoignable. Lance-le avec <code>uvicorn main:app --port 8000</code> dans <code>backend/</code>, puis réenregistre ta journée.`,
-      server: "Le serveur d'analyse a renvoyé une erreur. Réessaie dans un instant.",
-    };
-    el.innerHTML = `${head}<div class="capacity-empty"><p class="empty-emoji" aria-hidden="true">🔌</p><p>${messages[state.analysisError]}</p></div>`;
-    return;
-  }
-  if (!analysis) {
-    el.innerHTML = `${head}
-      <div class="capacity-empty">
-        <p class="empty-emoji" aria-hidden="true">🧠</p>
-        <p>Remplis ta journée : on estimera ta capacité de concentration et le type de révision le plus adapté.</p>
-        <button type="button" class="btn btn-ghost" data-action="fill-today">Remplir ma journée</button>
-      </div>`;
-    return;
-  }
-
-  const pct = analysis.cognitive_capacity_percent;
-  const reco = analysis.recommendation;
-  el.innerHTML = `${head}
-    <div class="capacity-body">
-      <div class="gauge" style="--p: ${pct}" role="img" aria-label="Capacité cognitive estimée : ${pct} %">
-        <span class="gauge-value">${pct}<small>%</small></span>
-      </div>
-      <div class="capacity-reco">
-        <p class="reco-label"><span aria-hidden="true">${RECO_ICONS[reco.type] || '📚'}</span> ${escapeHtml(reco.label)}</p>
-        <p>${escapeHtml(reco.advice)}</p>
-      </div>
-    </div>
-    ${analysis.sos_recommended && !state.sos ? `
-      <div class="callout">
-        <p>Ta journée a l'air difficile. Tu peux alléger ton planning sans risquer tes examens.</p>
-        <button type="button" class="btn btn-sos btn-small" data-action="sos">Activer le mode SOS</button>
-      </div>` : ''}
-    ${analysis.missing?.length ? `<p class="capacity-note muted">Valeurs neutres utilisées pour : ${analysis.missing.join(', ')}.</p>` : ''}
-    <p class="capacity-note muted">Estimation indicative d'un réseau de neurones entraîné sur des données simulées.</p>`;
 }
 
 // ---------- Planning de révisions & mode SOS ----------
@@ -342,7 +253,7 @@ function renderPlanning() {
   const sos = state.sos;
   const banner = sos ? `
     <div class="sos-banner" role="status">
-      <p class="sos-title"><span aria-hidden="true">🫶</span> Prends soin de toi aujourd'hui</p>
+      <p class="sos-title">Prends soin de toi aujourd'hui</p>
       <p>${sos.moved
         ? `${sos.moved} révision${sos.moved > 1 ? 's' : ''} replanifiée${sos.moved > 1 ? 's' : ''} sur tes prochains pics d'énergie, prédits par le modèle.`
         : "Rien à déplacer aujourd'hui : profite-en pour te reposer."}</p>
@@ -360,7 +271,7 @@ function renderPlanning() {
           <p class="task-day-head">
             <span>${key === 'past' ? 'À replanifier' : dayHeading(key, todayKey)}</span>
             ${offset === 0 && sos ? '<span class="energy energy-rest">Repos</span>' : ''}
-            ${cap !== undefined ? `<span class="energy" title="Capacité prévue par le modèle">⚡ ${cap} %</span>` : ''}
+            ${cap !== undefined ? `<span class="energy" title="Capacité prévue par le modèle">${cap} %</span>` : ''}
           </p>
           <ul class="task-list">
             ${items.map((t) => `
@@ -368,7 +279,7 @@ function renderPlanning() {
                 <span class="diff diff-${t.difficulty}">${DIFFICULTY[t.difficulty]}</span>
                 <div class="task-body">
                   <p class="task-title">${escapeHtml(t.title)}</p>
-                  <p class="task-meta">📝 Échéance : ${formatShort(fromKey(t.deadline))}
+                  <p class="task-meta">Échéance : ${formatShort(fromKey(t.deadline))}
                     ${t.movedFrom ? '<span class="task-moved">↪ replanifiée (SOS)</span>' : ''}</p>
                 </div>
                 <button type="button" class="link-btn" data-action="task-done" aria-label="Marquer « ${escapeHtml(t.title)} » comme terminée">Terminée</button>
@@ -422,7 +333,7 @@ function renderPlanning() {
     if (!task.title) return toast('Donne un intitulé à ta révision');
     if (task.deadline < task.date) return toast("L'échéance doit être après la date prévue");
     store.addTask(task);
-    toast('Révision ajoutée 📚');
+    toast('Révision ajoutée');
     refreshAll();
   };
 }
@@ -466,7 +377,7 @@ async function triggerSos() {
     });
     store.setTasks(next);
     state.sos = { moved, kept, capacities: res.future_capacities };
-    toast("Mode SOS activé 🫶 Tes deadlines d'examens sont préservées");
+    toast("Mode SOS activé. Tes deadlines d'examens sont préservées");
     refreshAll();
     document.getElementById('planning').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
